@@ -1,7 +1,7 @@
 from django.http import HttpRequest, HttpResponse, Http404
 # Create your views here.
 from django.shortcuts import get_object_or_404
-from rest_framework import status
+from rest_framework import status, mixins, generics
 from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -28,6 +28,19 @@ class ArticleList(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+class ArticleList2(mixins.ListModelMixin,
+                   mixins.CreateModelMixin,
+                   generics.GenericAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.list(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        return self.create(request, *args, **kwargs)
+
+
 class ArticleDetail(APIView):
     def get_object(self, id: int):
         return get_object_or_404(Article, id=id)
@@ -46,3 +59,21 @@ class ArticleDetail(APIView):
     def delete(self, request: HttpRequest, id: int, format=None):
         self.get_object(id).delete()
         return HttpResponse(status=204)
+
+
+class ArticleDetail2(mixins.RetrieveModelMixin,
+                     mixins.UpdateModelMixin,
+                     mixins.DestroyModelMixin,
+                     generics.GenericAPIView):
+    lookup_field = 'id'
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+
+    def get(self, request, *args, **kwargs):
+        return self.retrieve(request, *args, **kwargs)
+
+    def put(self, request, *args, **kwargs):
+        return self.update(request, *args, **kwargs)
+
+    def delete(self, request, *args, **kwargs):
+        return self.destroy(request, *args, **kwargs)
