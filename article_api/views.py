@@ -40,6 +40,9 @@ class ArticleList2(mixins.ListModelMixin,
     def post(self, request, *args, **kwargs):
         return self.create(request, *args, **kwargs)
 
+class ArticleList3(generics.ListCreateAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
 
 class ArticleDetail(APIView):
     def get_object(self, id: int):
@@ -77,3 +80,8 @@ class ArticleDetail2(mixins.RetrieveModelMixin,
 
     def delete(self, request, *args, **kwargs):
         return self.destroy(request, *args, **kwargs)
+
+class ArticleDetail3(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Article.objects.all()
+    serializer_class = ArticleSerializer
+    lookup_field = 'id'
