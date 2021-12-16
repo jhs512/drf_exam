@@ -1,8 +1,9 @@
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest, HttpResponse, Http404
 # Create your views here.
+from django.shortcuts import get_object_or_404
 from rest_framework import status
+from rest_framework.views import APIView
 from rest_framework.decorators import api_view
-from rest_framework.parsers import JSONParser
 from rest_framework.response import Response
 
 from article_api.models import Article
@@ -13,14 +14,13 @@ def index(request: HttpRequest):
     return HttpResponse("안녕")
 
 
-@api_view(['GET', 'POST'])
-def article_list(request: HttpRequest):
-    if request.method == 'GET':
+class ArticleList(APIView):
+    def get(self, request: HttpRequest, format=None):
         articles = Article.objects.all()
         serializer = ArticleSerializer(articles, many=True)
         return Response(serializer.data)
 
-    elif request.method == 'POST':
+    def post(self, request: HttpRequest, format=None):
         serializer = ArticleSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -28,22 +28,21 @@ def article_list(request: HttpRequest):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-@api_view(['GET', 'PUT', 'DELETE'])
-def article_detail(request: HttpRequest, id: int):
-    try:
-        article = Article.objects.get(id=id)
-    except Article.DoesNotExist:
-        return HttpResponse(status=404)
+class ArticleDetail(APIView):
+    def get_object(self, id: int):
+        return get_object_or_404(Article, id=id)
 
-    if request.method == 'GET':
-        serializer = ArticleSerializer(article)
+    def get(self, request: HttpRequest, id: int, format=None):
+        serializer = ArticleSerializer(self.get_object(id))
         return Response(serializer.data)
-    elif request.method == 'PUT':
-        serializer = ArticleSerializer(article, data=request.data)
+
+    def put(self, request: HttpRequest, id: int, format=None):
+        serializer = ArticleSerializer(self.get_object(id), data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    elif request.method == 'DELETE':
-        article.delete()
+
+    def delete(self, request: HttpRequest, id: int, format=None):
+        self.get_object(id).delete()
         return HttpResponse(status=204)
